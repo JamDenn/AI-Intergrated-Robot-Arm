@@ -11,7 +11,7 @@ client = genai.Client(
     http_options = types.HttpOptions(timeout = 20000)
 )
 
-Initialize = input("Do you want to initialize the client? (Y/N): ") #Will be used to choose teach mode or run mode.
+Initialize = input("Do you want to initialize the client? (Y/N): ")
 
 #Operating Conditions
 Envlope_Units = "mm"
@@ -118,13 +118,49 @@ def AI_task_mode():
 
 def teach_mode_add_waypoint():
     #Allows a non-specialist operator to record a custom spatial waypoint.
+    print("\n---Teach Mode: Add Waypoint---")
+    try:
+        x=float(input(f"Enter X coordinate in {Envlope_Units}: "))
+        y=float(input(f"Enter Y coordinate in {Envlope_Units}: "))
+        z=float(input(f"Enter Z coordinate in {Envlope_Units}: "))
+
+        gripper_state = input("Enter gripper state ('open' or 'closed'): ").strip().lower()
+
+        target = [x, y, z]
+        if not validate_coordinates(target):
+            print("Target coordinates are out of workspace limits. Please try again.")
+            return
+
+        step = {
+            "action": "teach_move",
+            "target": target,
+            "gripper": gripper_state if gripper_state in ["open", "closed"] else "open"
+        }
+        taught_sequence.append(step)
+        print(f"Waypoint {len(taught_sequence)} added: {step}")
+    except ValueError:
+        print("Invalid input. Please enter numeric values for coordinates.")
 
 def view_taught_routine():
     #Displays all currently saved waypoints in the sequence.
+    print(f"\n--- Taught Routine ({len(taught_sequence)} steps) ---")
+    if not taught_sequence:
+        print("No waypoints recorded yet.")
+    for idx, step in enumerate(taught_sequence, start=1):
+        print(f"Step {idx}: {step}")
 
 def replay_taught_routine():
     #Executes the recorded sequence of waypoints autonomously.
-    
+    print(f"\n--- Replaying Taught Routine ({len(taught_sequence)} steps) ---")
+    if not taught_sequence:
+        print("No routine recorded. Please use teach mode to add waypoints first.")
+        return
+    for idx, step in enumerate(taught_sequence, start=1):
+        print(f"Executing Step {idx}: {step}")
+        send_to_hardware(step)
+        time.sleep(1)  # Optional delay between steps
+
+  
 def main(): 
     while True:
         print("\n=== Lynxmotion AL5D Control & Teach Mode Console ===")
@@ -154,3 +190,4 @@ if Initialize.lower() == 'y':
     main()
 else:
     print("Client initialization skipped. Exiting program.")
+    quit
