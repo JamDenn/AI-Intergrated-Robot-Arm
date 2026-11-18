@@ -42,6 +42,7 @@ def send_to_hardware(command_data):
     #Sends JSON command payload over serial to the microcontroller.
     try:
         with serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1) as ser:
+            time.sleep(2) # Wait for the Arduino to reset
             payload = json.dumps(command_data) + "\n"
             ser.write(payload.encode('utf-8'))
             print(f"Sent command to robot: {payload.strip()}")
@@ -53,7 +54,8 @@ def AI_task_mode():
     #Client Setup
     system_prompt = (
         "You are the advanced control brain for a Lynxmotion AL5D robot arm configured as a Golf Ball Teeing Robot. "
-        f"All Cartesian coordinates (X, Y, Z) must be provided in {Envlope_Units} (millimeters) relative to the robot base center. "
+        f"All Cartesian coordinates (X, Y, Z) must be provided in {Envlope_Units} (millimeters) relative to the robot base center.  "
+        f"The coordinated workspace is limited to X: {Workspace_X_Limits_mm}, Y: {Workspace_Y_Limits_mm}, Z: {Workspace_Z_Limits_mm}. "
         f"The golf ball has a diameter of {Golf_Ball_Diameter_mm} mm. "
         "Your task is to manage a two-stage sequential operation when requested: "
         "Stage 1: 'move_to_ball' (approach and pick up the golf ball using the cup gripper, gripper: 'closed'). "
@@ -63,8 +65,8 @@ def AI_task_mode():
     )
 
     workflow_steps = [
-    "Pick up the golf ball from the left pick up zone",
-    "Place the golf ball on the tee."
+    "Step 1: Move to the left pickup zone at [-150, 180, 21.4], approach the golf ball, and close the gripper.",
+    "Step 2: Move to the golf tee located at [0, 220, 35], place the golf ball, and open the gripper to release it."
     ]   
 
     # user_command = input("Enter your command: ")
@@ -190,4 +192,4 @@ if Initialize.lower() == 'y':
     main()
 else:
     print("Client initialization skipped. Exiting program.")
-    quit
+    quit()
